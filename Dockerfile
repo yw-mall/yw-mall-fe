@@ -2,10 +2,10 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-RUN npm install -g pnpm@latest --quiet
+RUN npm install -g pnpm@9 --quiet
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+RUN pnpm install --no-frozen-lockfile
 
 COPY . .
 RUN pnpm run build:h5
