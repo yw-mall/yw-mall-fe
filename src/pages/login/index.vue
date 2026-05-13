@@ -46,7 +46,13 @@ async function handleLogin() {
   loading.value = true
   try {
     const res = await login(username.value, password.value)
-    userStore.setToken(res.token, res.id)
+    userStore.setSession({
+      accessToken: res.accessToken,
+      refreshToken: res.refreshToken,
+      csrfToken: res.csrfToken,
+      expiresIn: res.expiresIn,
+      uid: res.uid,
+    })
     const pages = getCurrentPages()
     if (pages.length > 1) {
       const prevPage = pages[pages.length - 2] as any
