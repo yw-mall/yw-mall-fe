@@ -42,9 +42,14 @@ const cartStore = useCartStore()
 const product = ref<ProductDetailResp | null>(null)
 const loading = ref(true)
 
-function addToCart() {
-  cartStore.increment()
-  uni.showToast({ title: '已加入购物车', icon: 'success', duration: 1500 })
+async function addToCart() {
+  if (!product.value) return
+  try {
+    await cartStore.add(product.value.id, 1)
+    uni.showToast({ title: '已加入购物车', icon: 'success', duration: 1500 })
+  } catch (err) {
+    showError(err)
+  }
 }
 
 onMounted(async () => {

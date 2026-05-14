@@ -19,6 +19,16 @@ export interface ProductDetailResp {
   status: number
 }
 
+export interface CartItem {
+  productId: number
+  quantity: number
+  selected: boolean
+}
+
+export interface CartListResp {
+  items: CartItem[]
+}
+
 export interface ShopDetailResp {
   shop: ShopItem
 }
