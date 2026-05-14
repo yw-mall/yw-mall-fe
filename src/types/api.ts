@@ -82,6 +82,19 @@ export interface OrderItem {
   quantity: number
 }
 
+export interface CreateOrderItem {
+  productId: number
+  productName: string
+  price: number
+  quantity: number
+}
+
+export interface CreateOrderResp {
+  id: number
+  orderNo: string
+  totalAmount: number
+}
+
 export interface OrderDetailResp {
   id: number
   orderNo: string
