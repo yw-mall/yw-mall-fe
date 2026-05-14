@@ -23,7 +23,7 @@
               :model-value="row.quantity"
               :min="1"
               :max="row.stock || 999"
-              @change="(e: { value: number }) => changeQty(row.productId, e.value)"
+              @change="qtyHandler(row.productId)"
             />
             <wd-button size="small" type="text" @tap="remove(row.productId)">删除</wd-button>
           </view>
@@ -81,7 +81,7 @@ const total = computed(() => rows.value.reduce((sum, r) => sum + r.price * r.qua
 async function refresh() {
   loading.value = true
   try {
-    if (!userStore.accessToken) {
+    if (!userStore.token) {
       uni.navigateTo({ url: '/pages/login/index' })
       return
     }
@@ -116,6 +116,10 @@ async function changeQty(productId: number, quantity: number) {
   } catch (err) {
     showError(err)
   }
+}
+
+function qtyHandler(productId: number) {
+  return (e: { value: number }) => changeQty(productId, e.value)
 }
 
 async function remove(productId: number) {
