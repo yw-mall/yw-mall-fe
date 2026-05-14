@@ -74,6 +74,19 @@ export interface CashierInfo {
   mockEnabled: boolean
 }
 
+export interface AddressItem {
+  id: number
+  userId: number
+  receiverName: string
+  phone: string
+  province: string
+  city: string
+  district: string
+  detail: string
+  isDefault: boolean
+  createTime: number
+}
+
 // S1.7 订单详情（含时间线字段）
 export interface OrderItem {
   productId: number
