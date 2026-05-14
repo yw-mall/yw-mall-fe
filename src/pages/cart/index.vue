@@ -233,7 +233,9 @@ onShow(() => {
 .page {
   min-height: 100vh;
   background: $color-bg-page;
-  padding-bottom: 110px;
+  // 110px = bottom-bar (~60) + uni-app H5 tabBar (~50) — so 列表底部内容不会被
+  // 底部栏 + tabBar 一起盖住。
+  padding-bottom: 160px;
 }
 
 .state {
@@ -324,15 +326,18 @@ onShow(() => {
 
 .bottom-bar {
   position: fixed;
-  bottom: 0;
+  // 50px 让 bottom-bar 浮在 uni-app H5 tabBar 之上（默认 tabBar 高 50px）。
+  // iOS 安全区由 padding-bottom: env(safe-area-inset-bottom) 兜底。
+  bottom: 50px;
   left: 0;
   right: 0;
-  padding: $space-sm $space-md;
+  padding: $space-sm $space-md calc(#{$space-sm} + env(safe-area-inset-bottom));
   background: $color-bg-card;
   border-top: 1px solid $color-border;
   display: flex;
   align-items: center;
   gap: $space-md;
+  z-index: 10;
 }
 
 .check-all {
