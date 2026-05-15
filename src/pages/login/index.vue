@@ -53,6 +53,11 @@ async function handleLogin() {
       expiresIn: res.expiresIn,
       uid: res.uid,
     })
+    if (res.passwordExpired) {
+      uni.showToast({ title: '密码已过期，请立即修改', icon: 'none', duration: 2000 })
+      uni.reLaunch({ url: '/pages/my/password' })
+      return
+    }
     const pages = getCurrentPages()
     if (pages.length > 1) {
       const prevPage = pages[pages.length - 2] as any

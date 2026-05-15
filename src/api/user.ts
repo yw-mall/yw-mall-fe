@@ -8,6 +8,8 @@ export interface AuthLoginResp {
   refreshToken: string
   expiresIn: number
   csrfToken: string
+  // S4.3 — when true the FE must reLaunch to /pages/my/password before any other nav.
+  passwordExpired?: boolean
 }
 
 // login hits the P0 /api/auth/login endpoint which returns the full opaque

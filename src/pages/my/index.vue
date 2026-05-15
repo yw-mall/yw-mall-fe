@@ -17,6 +17,8 @@
         <wd-cell title="我的订单" is-link @click="nav('/pages/order/list')" />
         <wd-cell title="我的地址" is-link @click="nav('/pages/address/list')" />
         <wd-cell title="关注的店铺" is-link @click="nav('/pages/shop/followed')" />
+        <wd-cell title="实名认证" is-link @click="nav('/pages/my/kyc')" />
+        <wd-cell title="修改密码" is-link @click="nav('/pages/my/password')" />
       </wd-cell-group>
 
       <view class="logout-area">

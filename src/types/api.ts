@@ -128,6 +128,29 @@ export interface OrderListResp {
   total: number
 }
 
+// S4.4 KYC
+export interface SubmitKycReq {
+  realName: string
+  idCardNo: string
+  idCardFrontUrl: string
+  idCardBackUrl: string
+  faceVideoUrl: string
+}
+
+export interface SubmitKycResp {
+  requestId: string
+  status: number
+}
+
+export interface KycStatusResp {
+  status: number       // 0=未提交 1=审核中 2=已通过 3=已拒绝
+  rejectReason: string
+  submitTime: number
+  auditTime: number
+  realName: string     // server-masked: 张**
+  idCardNo: string     // server-masked: 1101**********1234
+}
+
 // S2 Refund
 export interface RefundRequest {
   id: number

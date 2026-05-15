@@ -73,6 +73,14 @@
     {
       "path": "pages/refund/list",
       "style": { "navigationBarTitleText": "我的退款" }
+    },
+    {
+      "path": "pages/my/kyc",
+      "style": { "navigationBarTitleText": "实名认证" }
+    },
+    {
+      "path": "pages/my/password",
+      "style": { "navigationBarTitleText": "修改密码" }
     }
   ],
   "tabBar": {
