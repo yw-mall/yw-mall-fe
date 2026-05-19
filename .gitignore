@@ -19,3 +19,5 @@ dist
 *.njsproj
 *.sln
 *.sw?
+# OMC local state (do not commit)
+.omc/
