@@ -15,11 +15,11 @@ export interface AuthLoginResp {
 // login hits the P0 /api/auth/login endpoint which returns the full opaque
 // session (access + refresh + csrf). The legacy /api/user/login still works
 // but returns the old `{ id, token }` shape only.
-export function login(username: string, password: string) {
+export function login(account: string, password: string) {
   return request<AuthLoginResp>({
     url: '/api/auth/login',
     method: 'POST',
-    data: { username, password },
+    data: { account, password },
   })
 }
 

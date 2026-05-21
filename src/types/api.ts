@@ -177,3 +177,24 @@ export interface ListRefundRequestsResp {
   requests: RefundRequest[]
   total: number
 }
+
+// ===== Sprint 5 multi-identifier register/login =====
+export interface SendCodeReq {
+  channel: 1 | 2;          // 1=sms, 2=email
+  target: string;
+  scene: number;
+}
+export interface SendCodeResp {
+  challengeToken: string;
+  expiresIn: number;
+}
+
+export interface RegisterV2Req {
+  username: string;
+  password: string;
+  phone?: string;
+  email?: string;
+  verifyCode: string;
+  challengeToken: string;
+}
+export interface RegisterV2Resp { id: number }
