@@ -1,13 +1,7 @@
 <template>
   <view class="page">
     <!-- Rejected: show reason banner -->
-    <wd-message
-      v-if="kycStatus === 3 && rejectReason"
-      type="warning"
-      :content="'审核未通过：' + rejectReason"
-      closable
-      custom-class="msg-banner"
-    />
+    <wd-notice-bar v-if="kycStatus === 3 && rejectReason" :text="'审核未通过：' + rejectReason" left-icon="warning" custom-class="msg-banner" />
 
     <!-- ===== Form: status 0 (未提交) or 3 (拒绝可重新提交) ===== -->
     <view v-if="kycStatus === 0 || kycStatus === 3">
