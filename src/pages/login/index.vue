@@ -8,7 +8,7 @@
     <view class="form">
       <wd-input
         v-model="username"
-        placeholder="用户名"
+        placeholder="用户名 / 手机号 / 邮箱"
         clearable
       />
       <wd-input
@@ -27,6 +27,7 @@
       >
         登录
       </wd-button>
+      <view class="register-link" @click="goRegister">还没账号？立即注册</view>
     </view>
   </view>
 </template>
@@ -41,6 +42,10 @@ const userStore = useUserStore()
 const username = ref('')
 const password = ref('')
 const loading = ref(false)
+
+function goRegister() {
+  uni.navigateTo({ url: '/pages/login/register' })
+}
 
 async function handleLogin() {
   loading.value = true
@@ -113,5 +118,12 @@ async function handleLogin() {
 
 .submit-btn {
   margin-top: $space-sm;
+}
+
+.register-link {
+  text-align: center;
+  color: $color-primary;
+  font-size: $font-size-sm;
+  margin-top: $space-md;
 }
 </style>
