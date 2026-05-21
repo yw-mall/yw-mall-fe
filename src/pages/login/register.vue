@@ -6,22 +6,46 @@
     </view>
 
     <view class="form">
-      <wd-input v-model="username" placeholder="用户名（4-32 位字母开头）" clearable />
-      <wd-input v-model="password" placeholder="密码（8 位以上 + 字母+数字）" type="password" clearable />
-      <wd-input v-model="passwordConfirm" placeholder="确认密码" type="password" clearable />
+      <view class="field">
+        <wd-input v-model="username" placeholder="用户名" clearable />
+        <view class="hint" :class="{ 'hint-error': username && !usernameValid }">
+          4-32 位，字母开头，可包含字母 / 数字 / 下划线
+        </view>
+      </view>
+
+      <view class="field">
+        <wd-input v-model="password" placeholder="密码" type="password" show-password clearable />
+        <view class="hint" :class="{ 'hint-error': password && !passwordValid }">
+          至少 8 位，必须同时包含字母和数字
+        </view>
+      </view>
+
+      <view class="field">
+        <wd-input v-model="passwordConfirm" placeholder="再次输入密码" type="password" show-password clearable />
+        <view
+          v-if="passwordConfirm"
+          class="hint"
+          :class="{ 'hint-error': passwordConfirm !== password }"
+        >{{ passwordConfirm === password ? '两次输入一致' : '两次密码不一致' }}</view>
+      </view>
 
       <wd-radio-group v-model="channel" inline shape="dot">
         <wd-radio :value="1">手机号</wd-radio>
         <wd-radio :value="2">邮箱</wd-radio>
       </wd-radio-group>
 
-      <wd-input v-model="target" :placeholder="channel === 1 ? '手机号 11 位' : '邮箱地址'" clearable />
+      <view class="field">
+        <wd-input v-model="target" :placeholder="channel === 1 ? '手机号' : '邮箱地址'" clearable />
+        <view class="hint" :class="{ 'hint-error': target && !targetValid }">
+          {{ channel === 1 ? '11 位手机号' : '例：user@example.com' }}
+        </view>
+      </view>
 
       <view class="code-row">
         <wd-input v-model="verifyCode" placeholder="6 位验证码" maxlength="6" class="code-input" />
         <wd-button
           size="small"
-          :disabled="cooldown > 0 || !target"
+          :disabled="cooldown > 0 || !targetValid"
           :loading="sending"
           class="code-btn"
           @click="onSendCode"
@@ -60,10 +84,27 @@ const sending = ref(false)
 const submitting = ref(false)
 let timer: ReturnType<typeof setInterval> | null = null
 
+// Client-side rules mirror user-rpc regex (see registerv2logic.go).
+// 服务端是真理源，这里只做即时反馈避免一来回 toast 才看到错。
+const usernameRE = /^[a-zA-Z][a-zA-Z0-9_]{3,31}$/
+const phoneRE = /^\d{11}$/
+const emailRE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/
+
+const usernameValid = computed(() => usernameRE.test(username.value))
+const passwordValid = computed(() =>
+  password.value.length >= 8 && /[a-zA-Z]/.test(password.value) && /\d/.test(password.value),
+)
+const targetValid = computed(() =>
+  channel.value === 1 ? phoneRE.test(target.value) : emailRE.test(target.value),
+)
+
 const canSubmit = computed(() =>
-  !!username.value && !!password.value &&
+  usernameValid.value &&
+  passwordValid.value &&
   password.value === passwordConfirm.value &&
-  !!target.value && !!verifyCode.value && !!challengeToken.value,
+  targetValid.value &&
+  verifyCode.value.length === 6 &&
+  !!challengeToken.value,
 )
 
 async function onSendCode() {
@@ -90,10 +131,6 @@ async function onSendCode() {
 }
 
 async function onSubmit() {
-  if (password.value !== passwordConfirm.value) {
-    uni.showToast({ title: '两次密码不一致', icon: 'none' })
-    return
-  }
   submitting.value = true
   try {
     await registerV2({
@@ -139,6 +176,14 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 }
 .app-name { font-size: $font-size-xl; font-weight: $font-weight-bold; }
 .form { width: 100%; display: flex; flex-direction: column; gap: $space-md; }
+.field { display: flex; flex-direction: column; gap: 6rpx; }
+.hint {
+  padding-left: 20rpx;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.4;
+}
+.hint-error { color: #ff4b4b; }
 .code-row { display: flex; align-items: center; gap: $space-md; }
 .code-input { flex: 1; }
 .code-btn { flex-shrink: 0; }
