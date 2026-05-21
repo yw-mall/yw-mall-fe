@@ -16,7 +16,7 @@
 
       <view class="field">
         <view class="label"><text class="req">*</text> 密码</view>
-        <wd-input v-model="password" placeholder="请输入密码" type="password" show-password clearable />
+        <wd-input v-model="password" placeholder="请输入密码" show-password clearable />
         <view class="hint" :class="{ 'hint-error': password && !passwordValid }">
           至少 8 位，必须同时包含字母和数字
         </view>
@@ -24,7 +24,7 @@
 
       <view class="field">
         <view class="label"><text class="req">*</text> 确认密码</view>
-        <wd-input v-model="passwordConfirm" placeholder="再次输入密码" type="password" show-password clearable />
+        <wd-input v-model="passwordConfirm" placeholder="再次输入密码" show-password clearable />
         <view
           v-if="passwordConfirm"
           class="hint"
