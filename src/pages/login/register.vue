@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { sendVerifyCode, registerV2 } from '@/api/auth'
 import { showError } from '@/api/request'
 
@@ -119,13 +119,23 @@ const canSubmit = computed(() =>
   emailValid.value,
 )
 
+// phone 改了 → 旧 challengeToken/code 都失效（Redis key 是按 phone 分的，
+// 后端会拿新 phone 去查老 token 必然不匹配，统一前置清掉避免出 "验证码不正确"
+// 这种迷惑错。
+watch(phone, () => {
+  challengeToken.value = ''
+  verifyCode.value = ''
+  cooldown.value = 0
+  if (timer) { clearInterval(timer); timer = null }
+})
+
 async function onSendCode() {
   if (cooldown.value > 0) return
   sending.value = true
   try {
     const res = await sendVerifyCode({
       channel: 1,         // sms 固定 — 短信验证码必填
-      target: phone.value,
+      target: phone.value.trim(),
       scene: 1,
     })
     challengeToken.value = res.challengeToken
@@ -146,11 +156,11 @@ async function onSubmit() {
   submitting.value = true
   try {
     await registerV2({
-      username: username.value,
+      username: username.value.trim(),
       password: password.value,
-      phone: phone.value,
-      email: email.value,    // 空串后端就不写 email_hash
-      verifyCode: verifyCode.value,
+      phone: phone.value.trim(),
+      email: email.value.trim(),       // 空串后端就不写 email_hash
+      verifyCode: verifyCode.value.trim(),
       challengeToken: challengeToken.value,
     })
     uni.showToast({ title: '注册成功，请登录', icon: 'success' })
