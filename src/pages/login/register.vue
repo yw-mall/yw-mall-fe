@@ -7,20 +7,23 @@
 
     <view class="form">
       <view class="field">
-        <wd-input v-model="username" placeholder="用户名" clearable />
+        <view class="label"><text class="req">*</text> 用户名</view>
+        <wd-input v-model="username" placeholder="请输入用户名" clearable />
         <view class="hint" :class="{ 'hint-error': username && !usernameValid }">
           4-32 位，字母开头，可包含字母 / 数字 / 下划线
         </view>
       </view>
 
       <view class="field">
-        <wd-input v-model="password" placeholder="密码" type="password" show-password clearable />
+        <view class="label"><text class="req">*</text> 密码</view>
+        <wd-input v-model="password" placeholder="请输入密码" type="password" show-password clearable />
         <view class="hint" :class="{ 'hint-error': password && !passwordValid }">
           至少 8 位，必须同时包含字母和数字
         </view>
       </view>
 
       <view class="field">
+        <view class="label"><text class="req">*</text> 确认密码</view>
         <wd-input v-model="passwordConfirm" placeholder="再次输入密码" type="password" show-password clearable />
         <view
           v-if="passwordConfirm"
@@ -29,27 +32,36 @@
         >{{ passwordConfirm === password ? '两次输入一致' : '两次密码不一致' }}</view>
       </view>
 
-      <wd-radio-group v-model="channel" inline shape="dot">
-        <wd-radio :value="1">手机号</wd-radio>
-        <wd-radio :value="2">邮箱</wd-radio>
-      </wd-radio-group>
-
       <view class="field">
-        <wd-input v-model="target" :placeholder="channel === 1 ? '手机号' : '邮箱地址'" clearable />
-        <view class="hint" :class="{ 'hint-error': target && !targetValid }">
-          {{ channel === 1 ? '11 位手机号' : '例：user@example.com' }}
+        <view class="label"><text class="req">*</text> 手机号</view>
+        <wd-input v-model="phone" placeholder="11 位手机号（用于接收短信验证码）" clearable />
+        <view class="hint" :class="{ 'hint-error': phone && !phoneValid }">
+          11 位手机号，注册后可用手机号登录
         </view>
       </view>
 
-      <view class="code-row">
-        <wd-input v-model="verifyCode" placeholder="6 位验证码" maxlength="6" class="code-input" />
-        <wd-button
-          size="small"
-          :disabled="cooldown > 0 || !targetValid"
-          :loading="sending"
-          class="code-btn"
-          @click="onSendCode"
-        >{{ cooldown > 0 ? `${cooldown}s` : '发送验证码' }}</wd-button>
+      <view class="field">
+        <view class="code-row">
+          <view class="code-left">
+            <view class="label"><text class="req">*</text> 短信验证码</view>
+            <wd-input v-model="verifyCode" placeholder="6 位验证码" maxlength="6" />
+          </view>
+          <wd-button
+            size="small"
+            :disabled="cooldown > 0 || !phoneValid"
+            :loading="sending"
+            class="code-btn"
+            @click="onSendCode"
+          >{{ cooldown > 0 ? `${cooldown}s` : '发送验证码' }}</wd-button>
+        </view>
+      </view>
+
+      <view class="field">
+        <view class="label">邮箱<text class="opt">（选填，填写后可用邮箱登录）</text></view>
+        <wd-input v-model="email" placeholder="例：user@example.com" clearable />
+        <view v-if="email" class="hint" :class="{ 'hint-error': !emailValid }">
+          {{ emailValid ? '邮箱格式正确' : '邮箱格式不合法' }}
+        </view>
       </view>
 
       <wd-button
@@ -74,8 +86,8 @@ import { showError } from '@/api/request'
 const username = ref('')
 const password = ref('')
 const passwordConfirm = ref('')
-const channel = ref<1 | 2>(1)
-const target = ref('')
+const phone = ref('')
+const email = ref('')
 const verifyCode = ref('')
 const challengeToken = ref('')
 
@@ -85,7 +97,6 @@ const submitting = ref(false)
 let timer: ReturnType<typeof setInterval> | null = null
 
 // Client-side rules mirror user-rpc regex (see registerv2logic.go).
-// 服务端是真理源，这里只做即时反馈避免一来回 toast 才看到错。
 const usernameRE = /^[a-zA-Z][a-zA-Z0-9_]{3,31}$/
 const phoneRE = /^\d{11}$/
 const emailRE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/
@@ -94,17 +105,18 @@ const usernameValid = computed(() => usernameRE.test(username.value))
 const passwordValid = computed(() =>
   password.value.length >= 8 && /[a-zA-Z]/.test(password.value) && /\d/.test(password.value),
 )
-const targetValid = computed(() =>
-  channel.value === 1 ? phoneRE.test(target.value) : emailRE.test(target.value),
-)
+const phoneValid = computed(() => phoneRE.test(phone.value))
+// email 选填: 空字符串视为合法 (不提交), 填了必须 valid。
+const emailValid = computed(() => email.value === '' || emailRE.test(email.value))
 
 const canSubmit = computed(() =>
   usernameValid.value &&
   passwordValid.value &&
   password.value === passwordConfirm.value &&
-  targetValid.value &&
+  phoneValid.value &&
   verifyCode.value.length === 6 &&
-  !!challengeToken.value,
+  !!challengeToken.value &&
+  emailValid.value,
 )
 
 async function onSendCode() {
@@ -112,8 +124,8 @@ async function onSendCode() {
   sending.value = true
   try {
     const res = await sendVerifyCode({
-      channel: channel.value,
-      target: target.value,
+      channel: 1,         // sms 固定 — 短信验证码必填
+      target: phone.value,
       scene: 1,
     })
     challengeToken.value = res.challengeToken
@@ -136,8 +148,8 @@ async function onSubmit() {
     await registerV2({
       username: username.value,
       password: password.value,
-      phone: channel.value === 1 ? target.value : '',
-      email: channel.value === 2 ? target.value : '',
+      phone: phone.value,
+      email: email.value,    // 空串后端就不写 email_hash
       verifyCode: verifyCode.value,
       challengeToken: challengeToken.value,
     })
@@ -176,7 +188,14 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 }
 .app-name { font-size: $font-size-xl; font-weight: $font-weight-bold; }
 .form { width: 100%; display: flex; flex-direction: column; gap: $space-md; }
-.field { display: flex; flex-direction: column; gap: 6rpx; }
+.field { display: flex; flex-direction: column; gap: 8rpx; }
+.label {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  padding-left: 4rpx;
+}
+.req { color: #ff4b4b; margin-right: 4rpx; }
+.opt { color: $color-text-secondary; font-size: $font-size-sm; margin-left: 8rpx; }
 .hint {
   padding-left: 20rpx;
   font-size: $font-size-sm;
@@ -184,8 +203,8 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
   line-height: 1.4;
 }
 .hint-error { color: #ff4b4b; }
-.code-row { display: flex; align-items: center; gap: $space-md; }
-.code-input { flex: 1; }
+.code-row { display: flex; align-items: flex-end; gap: $space-md; }
+.code-left { flex: 1; display: flex; flex-direction: column; gap: 8rpx; }
 .code-btn { flex-shrink: 0; }
 .submit-btn { margin-top: $space-sm; }
 .login-link {
