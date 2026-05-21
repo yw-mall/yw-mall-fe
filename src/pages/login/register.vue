@@ -1,13 +1,13 @@
 <template>
   <view class="page">
-    <view class="logo-area">
-      <wd-icon name="shop" size="64px" :color="'#FF4B4B'" />
-      <text class="app-name">注册账号</text>
+    <view class="header">
+      <text class="title">注册账号</text>
+      <text class="subtitle">填写以下信息完成注册</text>
     </view>
 
-    <view class="form">
+    <view class="card">
       <view class="field">
-        <view class="label"><text class="req">*</text> 用户名</view>
+        <view class="label"><text class="req">*</text>用户名</view>
         <wd-input v-model="username" placeholder="请输入用户名" clearable />
         <view class="hint" :class="{ 'hint-error': username && !usernameValid }">
           4-32 位，字母开头，可包含字母 / 数字 / 下划线
@@ -15,7 +15,7 @@
       </view>
 
       <view class="field">
-        <view class="label"><text class="req">*</text> 密码</view>
+        <view class="label"><text class="req">*</text>密码</view>
         <wd-input v-model="password" placeholder="请输入密码" show-password clearable />
         <view class="hint" :class="{ 'hint-error': password && !passwordValid }">
           至少 8 位，必须同时包含字母和数字
@@ -23,7 +23,7 @@
       </view>
 
       <view class="field">
-        <view class="label"><text class="req">*</text> 确认密码</view>
+        <view class="label"><text class="req">*</text>确认密码</view>
         <wd-input v-model="passwordConfirm" placeholder="再次输入密码" show-password clearable />
         <view
           v-if="passwordConfirm"
@@ -33,19 +33,17 @@
       </view>
 
       <view class="field">
-        <view class="label"><text class="req">*</text> 手机号</view>
-        <wd-input v-model="phone" placeholder="11 位手机号（用于接收短信验证码）" clearable />
+        <view class="label"><text class="req">*</text>手机号</view>
+        <wd-input v-model="phone" placeholder="11 位手机号" clearable />
         <view class="hint" :class="{ 'hint-error': phone && !phoneValid }">
-          11 位手机号，注册后可用手机号登录
+          注册后可用手机号登录
         </view>
       </view>
 
       <view class="field">
+        <view class="label"><text class="req">*</text>短信验证码</view>
         <view class="code-row">
-          <view class="code-left">
-            <view class="label"><text class="req">*</text> 短信验证码</view>
-            <wd-input v-model="verifyCode" placeholder="6 位验证码" maxlength="6" />
-          </view>
+          <wd-input v-model="verifyCode" placeholder="6 位验证码" maxlength="6" class="code-input" />
           <wd-button
             size="small"
             :disabled="cooldown > 0 || !phoneValid"
@@ -63,18 +61,18 @@
           {{ emailValid ? '邮箱格式正确' : '邮箱格式不合法' }}
         </view>
       </view>
-
-      <wd-button
-        type="primary"
-        block
-        :loading="submitting"
-        :disabled="!canSubmit"
-        class="submit-btn"
-        @click="onSubmit"
-      >注册</wd-button>
-
-      <view class="login-link" @click="goLogin">已有账号？立即登录</view>
     </view>
+
+    <wd-button
+      type="primary"
+      block
+      :loading="submitting"
+      :disabled="!canSubmit"
+      class="submit-btn"
+      @click="onSubmit"
+    >注册</wd-button>
+
+    <view class="login-link" @click="goLogin">已有账号？立即登录</view>
   </view>
 </template>
 
@@ -106,7 +104,6 @@ const passwordValid = computed(() =>
   password.value.length >= 8 && /[a-zA-Z]/.test(password.value) && /\d/.test(password.value),
 )
 const phoneValid = computed(() => phoneRE.test(phone.value))
-// email 选填: 空字符串视为合法 (不提交), 填了必须 valid。
 const emailValid = computed(() => email.value === '' || emailRE.test(email.value))
 
 const canSubmit = computed(() =>
@@ -119,9 +116,7 @@ const canSubmit = computed(() =>
   emailValid.value,
 )
 
-// phone 改了 → 旧 challengeToken/code 都失效（Redis key 是按 phone 分的，
-// 后端会拿新 phone 去查老 token 必然不匹配，统一前置清掉避免出 "验证码不正确"
-// 这种迷惑错。
+// phone 改 → 旧 token/code 失效，清掉避免下面提交报 "验证码不正确"
 watch(phone, () => {
   challengeToken.value = ''
   verifyCode.value = ''
@@ -134,12 +129,19 @@ async function onSendCode() {
   sending.value = true
   try {
     const res = await sendVerifyCode({
-      channel: 1,         // sms 固定 — 短信验证码必填
+      channel: 1,
       target: phone.value.trim(),
       scene: 1,
     })
     challengeToken.value = res.challengeToken
-    uni.showToast({ title: '验证码已发送', icon: 'success' })
+    // 开发态后端回显验证码，FE 直接填进框 + toast 显示，省得用户翻日志。
+    // 接真 SMS 时后端 devCode 返空，这段就自然 noop。
+    if (res.devCode) {
+      verifyCode.value = res.devCode
+      uni.showToast({ title: `开发态验证码：${res.devCode}`, icon: 'none', duration: 4000 })
+    } else {
+      uni.showToast({ title: '验证码已发送', icon: 'success' })
+    }
     cooldown.value = 60
     timer = setInterval(() => {
       cooldown.value -= 1
@@ -159,7 +161,7 @@ async function onSubmit() {
       username: username.value.trim(),
       password: password.value,
       phone: phone.value.trim(),
-      email: email.value.trim(),       // 空串后端就不写 email_hash
+      email: email.value.trim(),
       verifyCode: verifyCode.value.trim(),
       challengeToken: challengeToken.value,
     })
@@ -183,44 +185,77 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 .page {
   min-height: 100vh;
   background: $color-bg-page;
+  padding: 48rpx $space-lg $space-xl;
+  box-sizing: border-box;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: $space-lg;
+  .title {
+    display: block;
+    font-size: 44rpx;
+    font-weight: $font-weight-bold;
+    color: $color-text-primary;
+    margin-bottom: 12rpx;
+  }
+  .subtitle {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+.card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: $space-lg;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 0 $space-lg;
+  gap: 28rpx;
+  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.04);
 }
-.logo-area {
-  margin-top: 60px;
-  margin-bottom: $space-xl;
+
+.field {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: $space-sm;
+  gap: 12rpx;
 }
-.app-name { font-size: $font-size-xl; font-weight: $font-weight-bold; }
-.form { width: 100%; display: flex; flex-direction: column; gap: $space-md; }
-.field { display: flex; flex-direction: column; gap: 8rpx; }
+
 .label {
-  font-size: $font-size-sm;
+  font-size: $font-size-base;
   color: $color-text-primary;
+  font-weight: $font-weight-medium;
   padding-left: 4rpx;
 }
-.req { color: #ff4b4b; margin-right: 4rpx; }
-.opt { color: $color-text-secondary; font-size: $font-size-sm; margin-left: 8rpx; }
+.req { color: #ff4b4b; margin-right: 6rpx; font-weight: $font-weight-bold; }
+.opt { color: $color-text-secondary; font-size: $font-size-sm; font-weight: normal; margin-left: 8rpx; }
+
 .hint {
-  padding-left: 20rpx;
+  padding-left: 4rpx;
   font-size: $font-size-sm;
   color: $color-text-secondary;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 .hint-error { color: #ff4b4b; }
-.code-row { display: flex; align-items: flex-end; gap: $space-md; }
-.code-left { flex: 1; display: flex; flex-direction: column; gap: 8rpx; }
-.code-btn { flex-shrink: 0; }
-.submit-btn { margin-top: $space-sm; }
+
+.code-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.code-input { flex: 1; }
+.code-btn { flex-shrink: 0; min-width: 200rpx; }
+
+.submit-btn {
+  margin-top: $space-xl;
+  height: 88rpx;
+  font-size: $font-size-md;
+}
+
 .login-link {
   text-align: center;
   color: $color-primary;
   font-size: $font-size-sm;
-  margin-top: $space-md;
+  margin-top: $space-lg;
 }
 </style>

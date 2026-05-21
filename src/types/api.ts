@@ -187,6 +187,8 @@ export interface SendCodeReq {
 export interface SendCodeResp {
   challengeToken: string;
   expiresIn: number;
+  /** 开发态 mock 回显；接真 SMS 时后端返空。FE 自动填到验证码框 + toast 显示。 */
+  devCode?: string;
 }
 
 export interface RegisterV2Req {
