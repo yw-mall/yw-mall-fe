@@ -1,80 +1,97 @@
 <template>
   <view class="page">
     <view class="header">
-      <text class="title">注册账号</text>
-      <text class="subtitle">填写以下信息完成注册</text>
+      <text class="title">欢迎注册</text>
+      <text class="subtitle">填写下方信息，开启购物之旅</text>
     </view>
 
-    <view class="group-title">账号信息</view>
-    <view class="card">
-      <view class="field">
-        <view class="row">
-          <view class="label"><text class="req">*</text>用户名</view>
-          <wd-input v-model="username" placeholder="请输入" clearable no-border custom-class="input-flat" />
-        </view>
+    <view class="form">
+      <view class="input-block">
+        <wd-input
+          v-model="username"
+          placeholder="用户名"
+          prefix-icon="user"
+          clearable
+          no-border
+          custom-class="jd-input"
+        />
         <view class="hint" :class="{ 'hint-error': username && !usernameValid }">
           4-32 位，字母开头，可包含字母 / 数字 / 下划线
         </view>
       </view>
 
-      <view class="field">
-        <view class="row">
-          <view class="label"><text class="req">*</text>密码</view>
-          <wd-input v-model="password" placeholder="至少 8 位" show-password clearable no-border custom-class="input-flat" />
-        </view>
+      <view class="input-block">
+        <wd-input
+          v-model="password"
+          placeholder="密码"
+          prefix-icon="lock-on"
+          show-password
+          clearable
+          no-border
+          custom-class="jd-input"
+        />
         <view class="hint" :class="{ 'hint-error': password && !passwordValid }">
           至少 8 位，必须同时包含字母和数字
         </view>
       </view>
 
-      <view class="field">
-        <view class="row">
-          <view class="label"><text class="req">*</text>确认密码</view>
-          <wd-input v-model="passwordConfirm" placeholder="再次输入" show-password clearable no-border custom-class="input-flat" />
+      <view class="input-block">
+        <wd-input
+          v-model="passwordConfirm"
+          placeholder="再次输入密码"
+          prefix-icon="lock-on"
+          show-password
+          clearable
+          no-border
+          custom-class="jd-input"
+        />
+        <view v-if="passwordConfirm" class="hint" :class="{ 'hint-error': passwordConfirm !== password }">
+          {{ passwordConfirm === password ? '两次输入一致' : '两次密码不一致' }}
         </view>
-        <view
-          v-if="passwordConfirm"
-          class="hint"
-          :class="{ 'hint-error': passwordConfirm !== password }"
-        >{{ passwordConfirm === password ? '两次输入一致' : '两次密码不一致' }}</view>
       </view>
-    </view>
 
-    <view class="group-title">联系方式</view>
-    <view class="card">
-      <view class="field">
-        <view class="row">
-          <view class="label"><text class="req">*</text>手机号</view>
-          <wd-input v-model="phone" placeholder="11 位手机号" clearable no-border custom-class="input-flat" />
-        </view>
+      <view class="input-block">
+        <wd-input
+          v-model="phone"
+          placeholder="手机号"
+          prefix-icon="phone"
+          clearable
+          no-border
+          custom-class="jd-input"
+        />
         <view class="hint" :class="{ 'hint-error': phone && !phoneValid }">
-          注册后可用手机号登录
+          11 位手机号，注册后可用手机号登录
         </view>
       </view>
 
-      <view class="field">
-        <view class="row">
-          <view class="label"><text class="req">*</text>验证码</view>
-          <wd-input v-model="verifyCode" placeholder="6 位" maxlength="6" no-border custom-class="input-flat" />
-          <wd-button
-            size="small"
-            :disabled="cooldown > 0 || !phoneValid"
-            :loading="sending"
-            class="code-btn"
-            @click="onSendCode"
-          >{{ cooldown > 0 ? `${cooldown}s` : '发送' }}</wd-button>
-        </view>
+      <view class="input-block input-block--code">
+        <wd-input
+          v-model="verifyCode"
+          placeholder="短信验证码"
+          prefix-icon="secured"
+          maxlength="6"
+          no-border
+          custom-class="jd-input"
+        />
+        <text
+          class="code-action"
+          :class="{ 'code-action--disabled': cooldown > 0 || !phoneValid || sending }"
+          @click="onSendCode"
+        >{{ cooldown > 0 ? `${cooldown}s 后重发` : (sending ? '发送中...' : '获取验证码') }}</text>
       </view>
 
-      <view class="field">
-        <view class="row">
-          <view class="label">邮箱</view>
-          <wd-input v-model="email" placeholder="选填" clearable no-border custom-class="input-flat" />
-        </view>
+      <view class="input-block">
+        <wd-input
+          v-model="email"
+          placeholder="邮箱（选填，填后可用邮箱登录）"
+          prefix-icon="mail"
+          clearable
+          no-border
+          custom-class="jd-input"
+        />
         <view v-if="email" class="hint" :class="{ 'hint-error': !emailValid }">
           {{ emailValid ? '邮箱格式正确' : '邮箱格式不合法' }}
         </view>
-        <view v-else class="hint hint-muted">填写后可用邮箱登录</view>
       </view>
     </view>
 
@@ -85,9 +102,9 @@
       :disabled="!canSubmit"
       class="submit-btn"
       @click="onSubmit"
-    >注册</wd-button>
+    >立即注册</wd-button>
 
-    <view class="login-link" @click="goLogin">已有账号？立即登录</view>
+    <view class="login-link" @click="goLogin">已有账号？<text class="login-link__action">立即登录</text></view>
   </view>
 </template>
 
@@ -140,7 +157,8 @@ watch(phone, () => {
 })
 
 async function onSendCode() {
-  if (cooldown.value > 0) return
+  if (cooldown.value > 0 || sending.value) return
+  if (!phoneValid.value) return
   sending.value = true
   try {
     const res = await sendVerifyCode({
@@ -149,8 +167,6 @@ async function onSendCode() {
       scene: 1,
     })
     challengeToken.value = res.challengeToken
-    // 开发态后端回显验证码，FE 直接填进框 + toast 显示，省得用户翻日志。
-    // 接真 SMS 时后端 devCode 返空，这段就自然 noop。
     if (res.devCode) {
       verifyCode.value = res.devCode
       uni.showToast({ title: `开发态验证码：${res.devCode}`, icon: 'none', duration: 4000 })
@@ -199,103 +215,92 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 <style lang="scss" scoped>
 .page {
   min-height: 100vh;
-  background: $color-bg-page;
-  padding: 48rpx $space-lg $space-xl;
+  background: #fff;
+  padding: 64rpx 56rpx $space-xl;
   box-sizing: border-box;
 }
 
 .header {
-  text-align: center;
-  margin-bottom: $space-lg;
+  margin-bottom: 56rpx;
   .title {
     display: block;
-    font-size: 44rpx;
+    font-size: 52rpx;
     font-weight: $font-weight-bold;
-    color: $color-text-primary;
-    margin-bottom: 12rpx;
+    color: #1a1a1a;
+    line-height: 1.3;
+    margin-bottom: 16rpx;
   }
   .subtitle {
     font-size: $font-size-sm;
-    color: $color-text-secondary;
+    color: #999;
   }
 }
 
-.group-title {
-  font-size: $font-size-sm;
-  color: $color-text-secondary;
-  padding: 0 8rpx 12rpx;
-  margin-top: $space-md;
-  &:first-of-type { margin-top: 0; }
-}
-
-.card {
-  background: #fff;
-  border-radius: 24rpx;
-  padding: $space-md $space-lg;
-  margin-bottom: $space-md;
+.form {
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.04);
+  gap: 32rpx;
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
-  padding: 12rpx 0;
-  border-bottom: 1rpx solid #f2f2f5;
+.input-block {
+  background: #f5f5f7;
+  border-radius: 16rpx;
+  padding: 4rpx 24rpx;
+  position: relative;
 
-  &:last-child { border-bottom: none; }
+  &.input-block--code {
+    display: flex;
+    align-items: center;
+  }
 }
 
-.row {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  min-height: 80rpx;
-}
-
-.label {
-  width: 150rpx;
-  flex-shrink: 0;
-  font-size: $font-size-base;
-  color: $color-text-primary;
-  font-weight: $font-weight-medium;
-}
-.req { color: #ff4b4b; margin-right: 4rpx; font-weight: $font-weight-bold; }
-
-/* wd-input 根去 padding/边框, 文字右对齐 (iOS 设置风) */
-:deep(.input-flat) { background: transparent !important; padding: 0 !important; flex: 1; }
-:deep(.input-flat .wd-input__inner) {
+:deep(.jd-input) { background: transparent !important; padding: 0 !important; flex: 1; }
+:deep(.jd-input .wd-input__inner) {
   padding: 0 !important;
-  font-size: $font-size-base;
-  text-align: right;
+  font-size: 30rpx;
+  color: #1a1a1a;
+  line-height: 80rpx;
+  height: 80rpx;
 }
-:deep(.input-flat .wd-input__placeholder) { text-align: right; }
+:deep(.jd-input .wd-input__prefix) {
+  margin-right: 16rpx;
+  color: #999;
+  font-size: 36rpx;
+}
+:deep(.jd-input .wd-input__placeholder) { color: #b0b0b0; }
+
+.code-action {
+  flex-shrink: 0;
+  padding-left: 24rpx;
+  font-size: $font-size-base;
+  color: #e1251b;
+  font-weight: $font-weight-medium;
+  border-left: 1rpx solid #e5e5e7;
+
+  &--disabled { color: #b0b0b0; }
+}
 
 .hint {
-  padding-left: 166rpx;
+  padding: 12rpx 8rpx 0;
   font-size: $font-size-sm;
-  color: $color-text-secondary;
+  color: #999;
   line-height: 1.5;
-  margin-top: 2rpx;
-  text-align: right;
 }
-.hint-error { color: #ff4b4b; }
-.hint-muted { color: #c8c9cc; }
-
-.code-btn { flex-shrink: 0; min-width: 160rpx; margin-left: 8rpx; }
+.hint-error { color: #e1251b; }
 
 .submit-btn {
-  margin-top: $space-xl;
-  height: 88rpx;
-  font-size: $font-size-md;
+  margin-top: 64rpx;
+  height: 92rpx;
+  font-size: 32rpx;
+  border-radius: 46rpx !important;
+  background: linear-gradient(90deg, #ff4b4b 0%, #e1251b 100%) !important;
 }
 
 .login-link {
   text-align: center;
-  color: $color-primary;
+  margin-top: 40rpx;
+  color: #999;
   font-size: $font-size-sm;
-  margin-top: $space-lg;
+  &__action { color: #e1251b; font-weight: $font-weight-medium; }
 }
 </style>
