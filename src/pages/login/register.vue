@@ -7,24 +7,30 @@
 
     <view class="card">
       <view class="field">
-        <view class="label"><text class="req">*</text>用户名</view>
-        <wd-input v-model="username" placeholder="请输入用户名" clearable />
+        <view class="row">
+          <view class="label"><text class="req">*</text>用户名</view>
+          <wd-input v-model="username" placeholder="请输入用户名" clearable no-border custom-class="input-flat" />
+        </view>
         <view class="hint" :class="{ 'hint-error': username && !usernameValid }">
           4-32 位，字母开头，可包含字母 / 数字 / 下划线
         </view>
       </view>
 
       <view class="field">
-        <view class="label"><text class="req">*</text>密码</view>
-        <wd-input v-model="password" placeholder="请输入密码" show-password clearable />
+        <view class="row">
+          <view class="label"><text class="req">*</text>密码</view>
+          <wd-input v-model="password" placeholder="请输入密码" show-password clearable no-border custom-class="input-flat" />
+        </view>
         <view class="hint" :class="{ 'hint-error': password && !passwordValid }">
           至少 8 位，必须同时包含字母和数字
         </view>
       </view>
 
       <view class="field">
-        <view class="label"><text class="req">*</text>确认密码</view>
-        <wd-input v-model="passwordConfirm" placeholder="再次输入密码" show-password clearable />
+        <view class="row">
+          <view class="label"><text class="req">*</text>确认密码</view>
+          <wd-input v-model="passwordConfirm" placeholder="再次输入密码" show-password clearable no-border custom-class="input-flat" />
+        </view>
         <view
           v-if="passwordConfirm"
           class="hint"
@@ -33,30 +39,34 @@
       </view>
 
       <view class="field">
-        <view class="label"><text class="req">*</text>手机号</view>
-        <wd-input v-model="phone" placeholder="11 位手机号" clearable />
+        <view class="row">
+          <view class="label"><text class="req">*</text>手机号</view>
+          <wd-input v-model="phone" placeholder="11 位手机号" clearable no-border custom-class="input-flat" />
+        </view>
         <view class="hint" :class="{ 'hint-error': phone && !phoneValid }">
           注册后可用手机号登录
         </view>
       </view>
 
       <view class="field">
-        <view class="label"><text class="req">*</text>短信验证码</view>
-        <view class="code-row">
-          <wd-input v-model="verifyCode" placeholder="6 位验证码" maxlength="6" class="code-input" />
+        <view class="row">
+          <view class="label"><text class="req">*</text>验证码</view>
+          <wd-input v-model="verifyCode" placeholder="6 位验证码" maxlength="6" no-border custom-class="input-flat" />
           <wd-button
             size="small"
             :disabled="cooldown > 0 || !phoneValid"
             :loading="sending"
             class="code-btn"
             @click="onSendCode"
-          >{{ cooldown > 0 ? `${cooldown}s` : '发送验证码' }}</wd-button>
+          >{{ cooldown > 0 ? `${cooldown}s` : '发送' }}</wd-button>
         </view>
       </view>
 
       <view class="field">
-        <view class="label">邮箱<text class="opt">（选填，填写后可用邮箱登录）</text></view>
-        <wd-input v-model="email" placeholder="例：user@example.com" clearable />
+        <view class="row">
+          <view class="label">邮箱</view>
+          <wd-input v-model="email" placeholder="选填，可用邮箱登录" clearable no-border custom-class="input-flat" />
+        </view>
         <view v-if="email" class="hint" :class="{ 'hint-error': !emailValid }">
           {{ emailValid ? '邮箱格式正确' : '邮箱格式不合法' }}
         </view>
@@ -208,43 +218,52 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 .card {
   background: #fff;
   border-radius: 24rpx;
-  padding: $space-lg;
+  padding: $space-md $space-lg;
   display: flex;
   flex-direction: column;
-  gap: 28rpx;
   box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.04);
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 12rpx;
+  gap: 4rpx;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #f2f2f5;
+
+  &:last-child { border-bottom: none; }
 }
 
-.label {
-  font-size: $font-size-base;
-  color: $color-text-primary;
-  font-weight: $font-weight-medium;
-  padding-left: 4rpx;
-}
-.req { color: #ff4b4b; margin-right: 6rpx; font-weight: $font-weight-bold; }
-.opt { color: $color-text-secondary; font-size: $font-size-sm; font-weight: normal; margin-left: 8rpx; }
-
-.hint {
-  padding-left: 4rpx;
-  font-size: $font-size-sm;
-  color: $color-text-secondary;
-  line-height: 1.5;
-}
-.hint-error { color: #ff4b4b; }
-
-.code-row {
+.row {
   display: flex;
   align-items: center;
   gap: 16rpx;
+  min-height: 80rpx;
 }
-.code-input { flex: 1; }
-.code-btn { flex-shrink: 0; min-width: 200rpx; }
+
+.label {
+  width: 150rpx;
+  flex-shrink: 0;
+  font-size: $font-size-base;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+.req { color: #ff4b4b; margin-right: 4rpx; font-weight: $font-weight-bold; }
+
+/* wd-input 的根元素深度选择器，去掉默认 padding 让它跟 label 对齐 */
+:deep(.input-flat) { background: transparent !important; padding: 0 !important; flex: 1; }
+:deep(.input-flat .wd-input__inner) { padding: 0 !important; font-size: $font-size-base; }
+
+.hint {
+  padding-left: 166rpx; /* 150 label + 16 gap, 与 input 对齐 */
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.5;
+  margin-top: 2rpx;
+}
+.hint-error { color: #ff4b4b; }
+
+.code-btn { flex-shrink: 0; min-width: 160rpx; margin-left: 8rpx; }
 
 .submit-btn {
   margin-top: $space-xl;
