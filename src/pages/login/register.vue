@@ -5,11 +5,12 @@
       <text class="subtitle">填写以下信息完成注册</text>
     </view>
 
+    <view class="group-title">账号信息</view>
     <view class="card">
       <view class="field">
         <view class="row">
           <view class="label"><text class="req">*</text>用户名</view>
-          <wd-input v-model="username" placeholder="请输入用户名" clearable no-border custom-class="input-flat" />
+          <wd-input v-model="username" placeholder="请输入" clearable no-border custom-class="input-flat" />
         </view>
         <view class="hint" :class="{ 'hint-error': username && !usernameValid }">
           4-32 位，字母开头，可包含字母 / 数字 / 下划线
@@ -19,7 +20,7 @@
       <view class="field">
         <view class="row">
           <view class="label"><text class="req">*</text>密码</view>
-          <wd-input v-model="password" placeholder="请输入密码" show-password clearable no-border custom-class="input-flat" />
+          <wd-input v-model="password" placeholder="至少 8 位" show-password clearable no-border custom-class="input-flat" />
         </view>
         <view class="hint" :class="{ 'hint-error': password && !passwordValid }">
           至少 8 位，必须同时包含字母和数字
@@ -29,7 +30,7 @@
       <view class="field">
         <view class="row">
           <view class="label"><text class="req">*</text>确认密码</view>
-          <wd-input v-model="passwordConfirm" placeholder="再次输入密码" show-password clearable no-border custom-class="input-flat" />
+          <wd-input v-model="passwordConfirm" placeholder="再次输入" show-password clearable no-border custom-class="input-flat" />
         </view>
         <view
           v-if="passwordConfirm"
@@ -37,7 +38,10 @@
           :class="{ 'hint-error': passwordConfirm !== password }"
         >{{ passwordConfirm === password ? '两次输入一致' : '两次密码不一致' }}</view>
       </view>
+    </view>
 
+    <view class="group-title">联系方式</view>
+    <view class="card">
       <view class="field">
         <view class="row">
           <view class="label"><text class="req">*</text>手机号</view>
@@ -51,7 +55,7 @@
       <view class="field">
         <view class="row">
           <view class="label"><text class="req">*</text>验证码</view>
-          <wd-input v-model="verifyCode" placeholder="6 位验证码" maxlength="6" no-border custom-class="input-flat" />
+          <wd-input v-model="verifyCode" placeholder="6 位" maxlength="6" no-border custom-class="input-flat" />
           <wd-button
             size="small"
             :disabled="cooldown > 0 || !phoneValid"
@@ -65,11 +69,12 @@
       <view class="field">
         <view class="row">
           <view class="label">邮箱</view>
-          <wd-input v-model="email" placeholder="选填，可用邮箱登录" clearable no-border custom-class="input-flat" />
+          <wd-input v-model="email" placeholder="选填" clearable no-border custom-class="input-flat" />
         </view>
         <view v-if="email" class="hint" :class="{ 'hint-error': !emailValid }">
           {{ emailValid ? '邮箱格式正确' : '邮箱格式不合法' }}
         </view>
+        <view v-else class="hint hint-muted">填写后可用邮箱登录</view>
       </view>
     </view>
 
@@ -215,10 +220,19 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
   }
 }
 
+.group-title {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  padding: 0 8rpx 12rpx;
+  margin-top: $space-md;
+  &:first-of-type { margin-top: 0; }
+}
+
 .card {
   background: #fff;
   border-radius: 24rpx;
   padding: $space-md $space-lg;
+  margin-bottom: $space-md;
   display: flex;
   flex-direction: column;
   box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.04);
@@ -250,18 +264,25 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 }
 .req { color: #ff4b4b; margin-right: 4rpx; font-weight: $font-weight-bold; }
 
-/* wd-input 的根元素深度选择器，去掉默认 padding 让它跟 label 对齐 */
+/* wd-input 根去 padding/边框, 文字右对齐 (iOS 设置风) */
 :deep(.input-flat) { background: transparent !important; padding: 0 !important; flex: 1; }
-:deep(.input-flat .wd-input__inner) { padding: 0 !important; font-size: $font-size-base; }
+:deep(.input-flat .wd-input__inner) {
+  padding: 0 !important;
+  font-size: $font-size-base;
+  text-align: right;
+}
+:deep(.input-flat .wd-input__placeholder) { text-align: right; }
 
 .hint {
-  padding-left: 166rpx; /* 150 label + 16 gap, 与 input 对齐 */
+  padding-left: 166rpx;
   font-size: $font-size-sm;
   color: $color-text-secondary;
   line-height: 1.5;
   margin-top: 2rpx;
+  text-align: right;
 }
 .hint-error { color: #ff4b4b; }
+.hint-muted { color: #c8c9cc; }
 
 .code-btn { flex-shrink: 0; min-width: 160rpx; margin-left: 8rpx; }
 
