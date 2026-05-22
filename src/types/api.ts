@@ -200,3 +200,10 @@ export interface RegisterV2Req {
   challengeToken: string;
 }
 export interface RegisterV2Resp { id: number }
+
+export interface ResetPasswordReq {
+  phone: string;
+  verifyCode: string;
+  challengeToken: string;
+  newPassword: string;
+}

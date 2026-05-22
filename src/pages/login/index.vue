@@ -1,34 +1,49 @@
 <template>
   <view class="page">
-    <view class="logo-area">
-      <wd-icon name="shop" size="64px" :color="'#FF4B4B'" />
-      <text class="app-name">Mall</text>
+    <view class="header">
+      <text class="title">欢迎回来</text>
+      <text class="subtitle">登录后享受更多服务</text>
     </view>
 
     <view class="form">
-      <wd-input
-        v-model="username"
-        placeholder="用户名 / 手机号 / 邮箱"
-        clearable
-      />
-      <wd-input
-        v-model="password"
-        placeholder="密码"
-        type="password"
-        clearable
-      />
-      <wd-button
-        type="primary"
-        block
-        :loading="loading"
-        :disabled="loading || !username || !password"
-        class="submit-btn"
-        @click="handleLogin"
-      >
-        登录
-      </wd-button>
-      <view class="register-link" @click="goRegister">还没账号？立即注册</view>
+      <view class="input-block">
+        <wd-input
+          v-model="username"
+          placeholder="用户名 / 手机号 / 邮箱"
+          prefix-icon="user"
+          clearable
+          no-border
+          custom-class="jd-input"
+        />
+      </view>
+
+      <view class="input-block">
+        <wd-input
+          v-model="password"
+          placeholder="密码"
+          prefix-icon="lock-on"
+          show-password
+          clearable
+          no-border
+          custom-class="jd-input"
+        />
+      </view>
+
+      <view class="aux-row">
+        <text class="aux-link" @click="goReset">忘记密码？</text>
+      </view>
     </view>
+
+    <wd-button
+      type="primary"
+      block
+      :loading="loading"
+      :disabled="loading || !username || !password"
+      class="submit-btn"
+      @click="handleLogin"
+    >登录</wd-button>
+
+    <view class="register-link" @click="goRegister">还没账号？<text class="register-link__action">立即注册</text></view>
   </view>
 </template>
 
@@ -46,11 +61,14 @@ const loading = ref(false)
 function goRegister() {
   uni.navigateTo({ url: '/pages/login/register' })
 }
+function goReset() {
+  uni.navigateTo({ url: '/pages/login/reset-password' })
+}
 
 async function handleLogin() {
   loading.value = true
   try {
-    const res = await login(username.value, password.value)
+    const res = await login(username.value.trim(), password.value)
     userStore.setSession({
       accessToken: res.accessToken,
       refreshToken: res.refreshToken,
@@ -87,43 +105,77 @@ async function handleLogin() {
 <style lang="scss" scoped>
 .page {
   min-height: 100vh;
-  background: $color-bg-page;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0 $space-lg;
+  background: #fff;
+  padding: 96rpx 56rpx $space-xl;
+  box-sizing: border-box;
 }
 
-.logo-area {
-  margin-top: 100px;
-  margin-bottom: 48px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: $space-sm;
-}
-
-.app-name {
-  font-size: $font-size-xl;
-  font-weight: $font-weight-bold;
-  color: $color-text-primary;
+.header {
+  margin-bottom: 64rpx;
+  .title {
+    display: block;
+    font-size: 52rpx;
+    font-weight: $font-weight-bold;
+    color: #1a1a1a;
+    line-height: 1.3;
+    margin-bottom: 16rpx;
+  }
+  .subtitle {
+    font-size: $font-size-sm;
+    color: #999;
+  }
 }
 
 .form {
-  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: $space-md;
+  gap: 32rpx;
+}
+
+.input-block {
+  background: #f5f5f7;
+  border-radius: 16rpx;
+  padding: 4rpx 24rpx;
+}
+
+:deep(.jd-input) { background: transparent !important; padding: 0 !important; flex: 1; }
+:deep(.jd-input .wd-input__inner) {
+  padding: 0 !important;
+  font-size: 30rpx;
+  color: #1a1a1a;
+  line-height: 80rpx;
+  height: 80rpx;
+}
+:deep(.jd-input .wd-input__prefix) {
+  margin-right: 16rpx;
+  color: #999;
+  font-size: 36rpx;
+}
+:deep(.jd-input .wd-input__placeholder) { color: #b0b0b0; }
+
+.aux-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 8rpx;
+}
+.aux-link {
+  color: #999;
+  font-size: $font-size-sm;
 }
 
 .submit-btn {
-  margin-top: $space-sm;
+  margin-top: 64rpx;
+  height: 92rpx;
+  font-size: 32rpx;
+  border-radius: 46rpx !important;
+  background: linear-gradient(90deg, #ff4b4b 0%, #e1251b 100%) !important;
 }
 
 .register-link {
   text-align: center;
-  color: $color-primary;
+  margin-top: 40rpx;
+  color: #999;
   font-size: $font-size-sm;
-  margin-top: $space-md;
+  &__action { color: #e1251b; font-weight: $font-weight-medium; }
 }
 </style>

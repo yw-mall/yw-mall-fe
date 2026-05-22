@@ -16,3 +16,11 @@ export function registerV2(req: RegisterV2Req) {
     data: req as unknown as Record<string, unknown>,
   })
 }
+
+export function resetPassword(req: import('@/types/api').ResetPasswordReq) {
+  return request<{ ok: boolean }>({
+    url: '/api/auth/reset-password',
+    method: 'POST',
+    data: req,
+  })
+}
