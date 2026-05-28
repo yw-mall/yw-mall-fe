@@ -6,6 +6,7 @@ import type {
   IsFollowingResp,
   OkResp,
 } from '@/types/api'
+import { normalizeImagesInList } from './_normalize'
 
 const BASE = '/api/shop'
 
@@ -19,7 +20,9 @@ export const getRecommendedShops = (limit: number) =>
   request<ShopListResp>({ url: `${BASE}/recommended`, data: { limit } })
 
 export const getShopProducts = (shopId: number, page: number, pageSize: number) =>
-  request<ProductListResp>({ url: `${BASE}/${shopId}/products`, data: { page, pageSize } })
+  request<ProductListResp>({ url: `${BASE}/${shopId}/products`, data: { page, pageSize } }).then(
+    normalizeImagesInList,
+  )
 
 export const followShop = (shopId: number) =>
   request<OkResp>({ url: `${BASE}/${shopId}/follow`, method: 'POST', auth: true })
