@@ -46,7 +46,21 @@ async function addToCart() {
   if (!product.value) return
   try {
     await cartStore.add(product.value.id, 1)
-    uni.showToast({ title: '已加入购物车', icon: 'success', duration: 1500 })
+    // 京东风: 弹 modal 让用户选"继续逛" or "去购物车结算"
+    uni.showModal({
+      title: '已加入购物车',
+      content: `${product.value.name}\n¥${(product.value.price / 100).toFixed(2)}`,
+      cancelText: '继续逛逛',
+      confirmText: '去购物车',
+      success: (res) => {
+        if (res.confirm) {
+          uni.switchTab({
+            url: '/pages/cart/index',
+            fail: () => uni.navigateTo({ url: '/pages/cart/index' }),
+          })
+        }
+      },
+    })
   } catch (err) {
     showError(err)
   }
