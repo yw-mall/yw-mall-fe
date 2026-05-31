@@ -2,6 +2,7 @@
   <view class="page">
     <wd-status-tip status="empty" title="功能即将上线" />
   </view>
+  <shared-tab-bar />
 </template>
 
 <script setup lang="ts">

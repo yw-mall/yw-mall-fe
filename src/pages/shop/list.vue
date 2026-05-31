@@ -31,6 +31,7 @@
 
     <wd-loadmore :state="loadMoreStatus" />
   </view>
+  <shared-tab-bar />
 </template>
 
 <script setup lang="ts">

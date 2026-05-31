@@ -29,6 +29,7 @@
       <wd-button type="primary" block @tap="add">新增地址</wd-button>
     </view>
   </view>
+  <shared-tab-bar />
 </template>
 
 <script setup lang="ts">

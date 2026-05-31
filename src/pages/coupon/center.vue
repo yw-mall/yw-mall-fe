@@ -56,6 +56,7 @@
       </view>
     </view>
   </view>
+  <shared-tab-bar />
 </template>
 
 <script setup lang="ts">
