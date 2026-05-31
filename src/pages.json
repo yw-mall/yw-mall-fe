@@ -131,6 +131,12 @@
       "style": {
         "navigationBarTitleText": "修改密码"
       }
+    },
+    {
+      "path": "pages/coupon/center",
+      "style": {
+        "navigationBarTitleText": "优惠券"
+      }
     }
   ],
   "tabBar": {

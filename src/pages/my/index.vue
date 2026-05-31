@@ -15,6 +15,7 @@
 
       <wd-cell-group class="nav-group">
         <wd-cell title="我的订单" is-link @click="nav('/pages/order/list')" />
+        <wd-cell title="我的优惠券" is-link @click="nav('/pages/coupon/center')" />
         <wd-cell title="我的地址" is-link @click="nav('/pages/address/list')" />
         <wd-cell title="关注的店铺" is-link @click="nav('/pages/shop/followed')" />
         <wd-cell title="实名认证" is-link @click="nav('/pages/my/kyc')" />
