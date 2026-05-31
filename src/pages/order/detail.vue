@@ -45,8 +45,20 @@
           <text class="item-price">¥{{ ((item.price * item.quantity) / 100).toFixed(2) }}</text>
         </view>
         <view class="item-total">
-          <text>合计</text>
+          <text>商品合计</text>
           <text class="total-amount">¥{{ (order.totalAmount / 100).toFixed(2) }}</text>
+        </view>
+        <view v-if="(order.promotionDiscount || 0) > 0" class="item-total discount">
+          <text>活动优惠</text>
+          <text>- ¥{{ ((order.promotionDiscount || 0) / 100).toFixed(2) }}</text>
+        </view>
+        <view v-if="(order.couponDiscount || 0) > 0" class="item-total discount">
+          <text>优惠券</text>
+          <text>- ¥{{ ((order.couponDiscount || 0) / 100).toFixed(2) }}</text>
+        </view>
+        <view v-if="(order.promotionDiscount || 0) + (order.couponDiscount || 0) > 0" class="item-total paid">
+          <text>实付金额</text>
+          <text class="total-amount">¥{{ ((order.paidAmount || order.totalAmount) / 100).toFixed(2) }}</text>
         </view>
       </view>
 
@@ -59,7 +71,7 @@
 
       <view v-if="order.status === 0" class="bottom-bar">
         <wd-button type="primary" block size="large" @tap="goCashier">
-          去支付 ¥{{ (order.totalAmount / 100).toFixed(2) }}
+          去支付 ¥{{ ((order.paidAmount || order.totalAmount) / 100).toFixed(2) }}
         </wd-button>
       </view>
       <view v-else-if="canRefund" class="bottom-bar">

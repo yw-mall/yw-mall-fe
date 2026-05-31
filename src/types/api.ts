@@ -121,6 +121,18 @@ export interface OrderDetailResp {
   completeTime?: number
   cancelTime?: number
   cancelReason?: string
+  // 收件人
+  receiverName?: string
+  receiverPhone?: string
+  receiverProvince?: string
+  receiverCity?: string
+  receiverDistrict?: string
+  receiverDetail?: string
+  // Phase 1 优惠活动明细
+  promotionDiscount?: number
+  couponDiscount?: number
+  paidAmount?: number
+  discountDetail?: string
 }
 
 export interface OrderListResp {
