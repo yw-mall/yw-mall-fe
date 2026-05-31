@@ -204,7 +204,7 @@ onMounted(() => {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: 50px; // 让出 50px 给 SharedTabBar
   padding: $space-md;
   background: $color-bg-card;
   border-top: 1px solid $color-border;

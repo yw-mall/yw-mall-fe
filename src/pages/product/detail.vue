@@ -144,7 +144,7 @@ onMounted(async () => {
 
 .bottom-bar {
   position: fixed;
-  bottom: 0;
+  bottom: 50px; // 让出 50px 给 SharedTabBar, 不互相遮挡
   left: 0;
   right: 0;
   padding: $space-sm $space-md;
