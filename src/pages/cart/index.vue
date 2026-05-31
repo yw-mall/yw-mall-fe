@@ -28,7 +28,7 @@
               :model-value="row.quantity"
               :min="1"
               :max="row.stock || 999"
-              @change="qtyHandler(row.productId)"
+              @change="(e: { value: number }) => changeQty(row.productId, e.value)"
             />
             <wd-button size="small" type="text" @tap="remove(row.productId)">删除</wd-button>
           </view>
@@ -229,9 +229,6 @@ async function changeQty(productId: number, quantity: number) {
   }
 }
 
-function qtyHandler(productId: number) {
-  return (e: { value: number }) => changeQty(productId, e.value)
-}
 
 async function remove(productId: number) {
   try {
