@@ -22,3 +22,39 @@ export const updateCartQuantity = (productId: number, quantity: number) =>
 
 export const clearCart = () =>
   request<OkResp>({ url: `${BASE}/clear`, method: 'POST', auth: true })
+
+// Phase 1 价格引擎: 实时算价 - 输入选中的购物车 items + 可选券 + 运费
+export interface CartCalcItem {
+  skuId: number
+  productId: number
+  shopId: number
+  categoryId?: number
+  originalPrice: number
+  quantity: number
+}
+
+export interface CartCalcPriceResp {
+  totalAmount: number
+  promotionDiscount: number
+  couponDiscount: number
+  shippingFee: number
+  paidAmount: number
+  discountDetail: string
+  conflicts?: { couponId: number; reason: string }[]
+}
+
+export const calcPrice = (data: {
+  items: CartCalcItem[]
+  couponIds?: number[]
+  shippingFee?: number
+}) =>
+  request<CartCalcPriceResp>({
+    url: `${BASE}/calc-price`,
+    method: 'POST',
+    auth: true,
+    data: {
+      items: data.items,
+      couponIds: data.couponIds ?? [],
+      shippingFee: data.shippingFee ?? 0,
+    },
+  })

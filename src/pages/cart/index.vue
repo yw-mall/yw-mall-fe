@@ -41,8 +41,14 @@
           <text class="check-all-label">全选</text>
         </view>
         <view class="total-area">
-          <text class="total-label">合计</text>
-          <text class="total-value">¥{{ (selectedTotal / 100).toFixed(2) }}</text>
+          <view v-if="priceCalc && priceCalc.promotionDiscount > 0" class="discount-line">
+            <text>已优惠</text>
+            <text class="discount-amount">¥{{ (priceCalc.promotionDiscount / 100).toFixed(2) }}</text>
+          </view>
+          <text class="total-label">{{ priceCalc && priceCalc.promotionDiscount > 0 ? '实付' : '合计' }}</text>
+          <text class="total-value">
+            ¥{{ (((priceCalc?.paidAmount) ?? selectedTotal) / 100).toFixed(2) }}
+          </text>
         </view>
         <wd-button
           type="primary"
@@ -58,17 +64,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useCartStore } from '@/stores/cart'
 import { useUserStore } from '@/stores/user'
 import { getProductDetail } from '@/api/product'
 import { createOrder } from '@/api/order'
+import { calcPrice } from '@/api/cart'
 import { showError } from '@/api/request'
 import type { CreateOrderItem } from '@/types/api'
 
 interface Row {
   productId: number
+  shopId: number
   name: string
   price: number
   stock: number
@@ -80,14 +88,20 @@ const cartStore = useCartStore()
 const userStore = useUserStore()
 const loading = ref(true)
 const checkingOut = ref(false)
-const productMap = ref<Record<number, { name: string; price: number; stock: number; image: string }>>({})
+const productMap = ref<Record<number, { name: string; price: number; stock: number; image: string; shopId: number }>>({})
 const selectedIds = ref<Set<number>>(new Set())
+
+// Phase 1 价格引擎：实时算价后的优惠拆分
+const priceCalc = ref<{ promotionDiscount: number; couponDiscount: number; paidAmount: number } | null>(null)
+const priceCalcing = ref(false)
+let calcTimer: ReturnType<typeof setTimeout> | null = null
 
 const rows = computed<Row[]>(() =>
   cartStore.items.map((it) => {
     const p = productMap.value[it.productId]
     return {
       productId: it.productId,
+      shopId: p?.shopId ?? 0,
       quantity: it.quantity,
       name: p?.name ?? `#${it.productId}`,
       price: p?.price ?? 0,
@@ -156,6 +170,7 @@ async function refresh() {
           price: p.price,
           stock: p.stock,
           image: p.images?.[0] ?? '',
+          shopId: p.shopId,
         }
       })
       productMap.value = next
@@ -223,6 +238,45 @@ async function checkout() {
     checkingOut.value = false
   }
 }
+
+// 实时算价 - 500ms 防抖, 选择变化 / 数量变化都触发
+function triggerCalcPrice() {
+  if (calcTimer) clearTimeout(calcTimer)
+  calcTimer = setTimeout(async () => {
+    if (!selectedRows.value.length) {
+      priceCalc.value = null
+      return
+    }
+    // shop_id 未加载完前不调 (避免引擎拿到 shopId=0 整套算崩)
+    if (selectedRows.value.some((r) => r.shopId === 0)) {
+      priceCalc.value = null
+      return
+    }
+    priceCalcing.value = true
+    try {
+      const r = await calcPrice({
+        items: selectedRows.value.map((row) => ({
+          skuId: row.productId,
+          productId: row.productId,
+          shopId: row.shopId,
+          originalPrice: row.price,
+          quantity: row.quantity,
+        })),
+      })
+      priceCalc.value = {
+        promotionDiscount: r.promotionDiscount,
+        couponDiscount: r.couponDiscount,
+        paidAmount: r.paidAmount,
+      }
+    } catch {
+      priceCalc.value = null // 失败时不显示优惠 fallback 原价
+    } finally {
+      priceCalcing.value = false
+    }
+  }, 500)
+}
+
+watch([selectedRows, () => rows.value.map((r) => r.quantity).join(',')], triggerCalcPrice, { immediate: true })
 
 onShow(() => {
   refresh()
@@ -368,5 +422,17 @@ onShow(() => {
   font-size: $font-size-md;
   color: $color-primary;
   font-weight: $font-weight-bold;
+}
+
+.discount-line {
+  display: flex;
+  gap: 4px;
+  font-size: $font-size-sm;
+  color: $color-text-hint;
+}
+
+.discount-amount {
+  color: #67c23a;
+  font-weight: $font-weight-medium;
 }
 </style>
