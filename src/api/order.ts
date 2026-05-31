@@ -13,10 +13,17 @@ export const listMyOrders = (params: { status?: number; page?: number; pageSize?
     auth: true,
   })
 
-export const createOrder = (items: CreateOrderItem[]) =>
+export const createOrder = (
+  items: CreateOrderItem[],
+  opts: { couponIds?: number[]; shippingFee?: number } = {},
+) =>
   request<CreateOrderResp>({
     url: `${BASE}/create`,
     method: 'POST',
-    data: { items } as unknown as Record<string, unknown>,
+    data: {
+      items,
+      couponIds: opts.couponIds ?? [],
+      shippingFee: opts.shippingFee ?? 0,
+    } as unknown as Record<string, unknown>,
     auth: true,
   })

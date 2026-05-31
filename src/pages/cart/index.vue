@@ -35,17 +35,32 @@
         </view>
       </view>
 
+      <!-- 优惠明细面板 (有任何减免时显示) -->
+      <view
+        v-if="priceCalc && (priceCalc.promotionDiscount > 0 || priceCalc.couponDiscount > 0)"
+        class="discount-panel"
+      >
+        <view class="discount-row">
+          <text class="lbl">商品合计</text>
+          <text class="val">¥{{ (selectedTotal / 100).toFixed(2) }}</text>
+        </view>
+        <view v-if="priceCalc.promotionDiscount > 0" class="discount-row">
+          <text class="lbl">活动优惠</text>
+          <text class="val saved">- ¥{{ (priceCalc.promotionDiscount / 100).toFixed(2) }}</text>
+        </view>
+        <view v-if="priceCalc.couponDiscount > 0" class="discount-row">
+          <text class="lbl">优惠券{{ appliedCoupon ? '（' + appliedCoupon.templateName + '）' : '' }}</text>
+          <text class="val saved">- ¥{{ (priceCalc.couponDiscount / 100).toFixed(2) }}</text>
+        </view>
+      </view>
+
       <view class="bottom-bar">
         <view class="check-all" @tap="toggleAll">
           <text class="check-mark" :class="{ on: allSelected }">{{ allSelected ? '✓' : '' }}</text>
           <text class="check-all-label">全选</text>
         </view>
         <view class="total-area">
-          <view v-if="priceCalc && priceCalc.promotionDiscount > 0" class="discount-line">
-            <text>已优惠</text>
-            <text class="discount-amount">¥{{ (priceCalc.promotionDiscount / 100).toFixed(2) }}</text>
-          </view>
-          <text class="total-label">{{ priceCalc && priceCalc.promotionDiscount > 0 ? '实付' : '合计' }}</text>
+          <text class="total-label">{{ priceCalc && (priceCalc.promotionDiscount > 0 || priceCalc.couponDiscount > 0) ? '实付' : '合计' }}</text>
           <text class="total-value">
             ¥{{ (((priceCalc?.paidAmount) ?? selectedTotal) / 100).toFixed(2) }}
           </text>
@@ -71,6 +86,7 @@ import { useUserStore } from '@/stores/user'
 import { getProductDetail } from '@/api/product'
 import { createOrder } from '@/api/order'
 import { calcPrice } from '@/api/cart'
+import { listMyCoupons, type MyCouponView } from '@/api/coupon'
 import { showError } from '@/api/request'
 import type { CreateOrderItem } from '@/types/api'
 
@@ -95,6 +111,13 @@ const selectedIds = ref<Set<number>>(new Set())
 const priceCalc = ref<{ promotionDiscount: number; couponDiscount: number; paidAmount: number } | null>(null)
 const priceCalcing = ref(false)
 let calcTimer: ReturnType<typeof setTimeout> | null = null
+
+// 用户可用券 + 当前自动选用的券 id (取门槛达标 + 面值最大那张)
+const myCoupons = ref<MyCouponView[]>([])
+const selectedCouponId = ref<number | null>(null)
+const appliedCoupon = computed(() =>
+  selectedCouponId.value ? myCoupons.value.find((c) => c.id === selectedCouponId.value) : null,
+)
 
 const rows = computed<Row[]>(() =>
   cartStore.items.map((it) => {
@@ -155,6 +178,7 @@ async function refresh() {
       return
     }
     await cartStore.load()
+    loadCoupons() // 后台异步加载, 不 block 渲染
     const missing = cartStore.items
       .map((it) => it.productId)
       .filter((pid) => !productMap.value[pid])
@@ -230,7 +254,9 @@ async function checkout() {
       price: r.price,
       quantity: r.quantity,
     }))
-    const resp = await createOrder(items)
+    const resp = await createOrder(items, {
+      couponIds: selectedCouponId.value ? [selectedCouponId.value] : [],
+    })
     uni.redirectTo({ url: `/pages/payment/cashier?orderId=${resp.id}` })
   } catch (err) {
     showError(err)
@@ -239,7 +265,37 @@ async function checkout() {
   }
 }
 
-// 实时算价 - 500ms 防抖, 选择变化 / 数量变化都触发
+// 加载用户可用券 (status=0 未用), 自动选 "门槛达标 + 面值最大" 一张
+async function loadCoupons() {
+  if (!userStore.token) return
+  try {
+    const r = await listMyCoupons({ status: 0, pageSize: 50 })
+    myCoupons.value = r.coupons ?? []
+  } catch {
+    myCoupons.value = []
+  }
+}
+
+// 在 selectedRows 变后, 重新挑最优券 (门槛达标 + 单店内匹配 shopId + 面值最大)
+function pickBestCoupon() {
+  if (!myCoupons.value.length || !selectedRows.value.length) {
+    selectedCouponId.value = null
+    return
+  }
+  const shopSubtotal: Record<number, number> = {}
+  for (const r of selectedRows.value) {
+    shopSubtotal[r.shopId] = (shopSubtotal[r.shopId] ?? 0) + r.price * r.quantity
+  }
+  let best: MyCouponView | null = null
+  for (const c of myCoupons.value) {
+    const subtotal = c.shopId > 0 ? shopSubtotal[c.shopId] ?? 0 : Object.values(shopSubtotal).reduce((a, b) => a + b, 0)
+    if (subtotal < c.minAmount) continue
+    if (!best || c.value > best.value) best = c
+  }
+  selectedCouponId.value = best ? best.id : null
+}
+
+// 实时算价 - 500ms 防抖, 选择变化 / 数量变化 / 券变化都触发
 function triggerCalcPrice() {
   if (calcTimer) clearTimeout(calcTimer)
   calcTimer = setTimeout(async () => {
@@ -247,11 +303,11 @@ function triggerCalcPrice() {
       priceCalc.value = null
       return
     }
-    // shop_id 未加载完前不调 (避免引擎拿到 shopId=0 整套算崩)
     if (selectedRows.value.some((r) => r.shopId === 0)) {
       priceCalc.value = null
       return
     }
+    pickBestCoupon()
     priceCalcing.value = true
     try {
       const r = await calcPrice({
@@ -262,6 +318,7 @@ function triggerCalcPrice() {
           originalPrice: row.price,
           quantity: row.quantity,
         })),
+        couponIds: selectedCouponId.value ? [selectedCouponId.value] : [],
       })
       priceCalc.value = {
         promotionDiscount: r.promotionDiscount,
@@ -269,14 +326,14 @@ function triggerCalcPrice() {
         paidAmount: r.paidAmount,
       }
     } catch {
-      priceCalc.value = null // 失败时不显示优惠 fallback 原价
+      priceCalc.value = null
     } finally {
       priceCalcing.value = false
     }
-  }, 500)
+  }, 300)
 }
 
-watch([selectedRows, () => rows.value.map((r) => r.quantity).join(',')], triggerCalcPrice, { immediate: true })
+watch([selectedRows, () => rows.value.map((r) => r.quantity).join(','), myCoupons], triggerCalcPrice, { immediate: true })
 
 onShow(() => {
   refresh()
@@ -434,5 +491,35 @@ onShow(() => {
 .discount-amount {
   color: #67c23a;
   font-weight: $font-weight-medium;
+}
+
+.discount-panel {
+  position: fixed;
+  bottom: calc(50px + 60px + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  background: #fff8f0;
+  border-top: 1px solid #ffe4d0;
+  padding: $space-sm $space-md;
+  z-index: 9;
+}
+
+.discount-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: $font-size-sm;
+  line-height: 1.6;
+
+  .lbl {
+    color: $color-text-secondary;
+  }
+
+  .val {
+    color: $color-text-primary;
+    &.saved {
+      color: #e6a23c;
+      font-weight: $font-weight-medium;
+    }
+  }
 }
 </style>
